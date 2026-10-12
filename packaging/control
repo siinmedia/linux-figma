@@ -1,0 +1,15 @@
+Package: figma-font-bridge
+Version: 4.0.0
+Section: utils
+Priority: optional
+Architecture: all
+Maintainer: SIINBot <siinmedia@example.com>
+Depends: nodejs (>= 16)
+Description: Figma Font Helper for Linux — local fonts in Figma web
+ A drop-in local font server that mimics Figma's official Font Helper
+ protocol, so locally installed Linux fonts appear in Figma (browser).
+ .
+ Fully self-contained: dependencies are bundled (no npm install needed at
+ setup). Implements /figma/version, /figma/font-files, /figma/font-file,
+ listens on 127.0.0.1:44950 (plus fallback ports). Runs as a systemd user
+ service that auto-starts on login. Works offline after install.

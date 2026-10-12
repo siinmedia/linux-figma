@@ -1,0 +1,16 @@
+#!/bin/bash
+REAL_USER="${SUDO_USER:-$USER}"
+REAL_HOME=$(getent passwd "$REAL_USER" | cut -d: -f6)
+REAL_UID=$(id -u "$REAL_USER" 2>/dev/null || true)
+
+if [ -n "$REAL_USER" ] && [ "$REAL_USER" != "root" ]; then
+    if [ -S "/run/user/$REAL_UID/bus" ]; then
+        sudo -u "$REAL_USER" DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/$REAL_UID/bus" \
+          systemctl --user disable --now figma-font-bridge.service 2>/dev/null || true
+    else
+        su - "$REAL_USER" -c "systemctl --user disable --now figma-font-bridge.service" 2>/dev/null || true
+    fi
+fi
+
+rm -f "$REAL_HOME/.config/systemd/user/figma-font-bridge.service"
+echo "Figma Font Bridge removed."

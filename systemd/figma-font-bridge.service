@@ -1,0 +1,15 @@
+[Unit]
+Description=Figma Font Helper for Linux (local font server)
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/env node %h/.local/share/figma-font-bridge/companion/index.js
+WorkingDirectory=%h/.local/share/figma-font-bridge/companion
+Restart=on-failure
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=default.target

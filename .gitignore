@@ -1,0 +1,24 @@
+# Dependencies
+node_modules/
+package-lock.json.bak
+
+# Build artifacts
+*.deb
+*.rpm
+*.AppImage
+dist/
+build/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Editor / OS
+.vscode/
+.idea/
+*.swp
+.DS_Store
+
+# Temp
+/tmp/
+*.tmp

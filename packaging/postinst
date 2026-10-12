@@ -1,0 +1,53 @@
+#!/bin/bash
+set -e
+
+APP_DIR="/usr/share/figma-font-bridge"
+REAL_USER="${SUDO_USER:-$USER}"
+REAL_HOME=$(getent passwd "$REAL_USER" | cut -d: -f6)
+REAL_UID=$(id -u "$REAL_USER" 2>/dev/null || true)
+NODE_BIN=$(command -v node || echo /usr/bin/node)
+
+echo "Setting up Figma Font Bridge..."
+
+if [ -n "$REAL_HOME" ] && [ -d "$REAL_HOME" ] && [ -n "$REAL_UID" ]; then
+    mkdir -p "$REAL_HOME/.config/systemd/user"
+
+    cat > "$REAL_HOME/.config/systemd/user/figma-font-bridge.service" << EOF
+[Unit]
+Description=Figma Font Helper for Linux
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=$NODE_BIN $APP_DIR/companion/index.js
+WorkingDirectory=$APP_DIR/companion
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=default.target
+EOF
+
+    chown -R "$REAL_USER:$REAL_USER" "$REAL_HOME/.config/systemd/user"
+
+    # Enable + start as the user (handles dbus env for sudo contexts)
+    if [ "$REAL_USER" != "root" ]; then
+        if su - "$REAL_USER" -c "systemctl --user daemon-reload && systemctl --user enable --now figma-font-bridge.service" 2>/dev/null; then
+            echo "Service enabled for $REAL_USER"
+        elif [ -S "/run/user/$REAL_UID/bus" ]; then
+            sudo -u "$REAL_USER" DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/$REAL_UID/bus" \
+              systemctl --user daemon-reload 2>/dev/null
+            sudo -u "$REAL_USER" DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/$REAL_UID/bus" \
+              systemctl --user enable --now figma-font-bridge.service 2>/dev/null || true
+            echo "Service enabled via dbus for $REAL_USER"
+        else
+            echo "Note: run 'systemctl --user enable --now figma-font-bridge' after logging in."
+        fi
+    fi
+fi
+
+echo ""
+echo "Installed! Figma Font Bridge runs on 127.0.0.1:44950 and auto-starts on login."
+echo "  Status:  systemctl --user status figma-font-bridge"
+echo "  Use it:  open figma.com in your browser and reload; local fonts will appear."
+echo ""

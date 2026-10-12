@@ -1,0 +1,13 @@
+{
+  "name": "figma-font-bridge-companion",
+  "version": "4.0.0",
+  "description": "Companion app to serve local fonts to Figma plugin",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "fontkit": "^2.0.4"
+  }
+}
