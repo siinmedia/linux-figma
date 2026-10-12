@@ -82,6 +82,75 @@ systemctl --user enable --now figma-font-bridge
 
 ---
 
+## Installing fonts (important!)
+
+The bridge only **serves fonts that are already installed on your system**.
+It does not download fonts for you. So install your fonts first, then restart
+the service.
+
+### Where to put font files
+
+Pick either location (`.ttf`, `.otf`, `.ttc`, `.woff`, `.woff2` all work):
+
+```bash
+# Per-user (recommended — no sudo needed)
+mkdir -p ~/.local/share/fonts
+cp /path/to/YourFont*.ttf ~/.local/share/fonts/
+
+# System-wide (all users)
+sudo cp /path/to/YourFont*.ttf /usr/share/fonts/truetype/
+```
+
+### Refresh the font cache
+
+After copying fonts, rebuild the fontconfig cache so other apps see them:
+
+```bash
+fc-cache -f -v
+```
+
+Verify your font is now known to the system:
+
+```bash
+fc-list | grep -i "Your Font"
+```
+
+### Make the bridge pick it up
+
+The bridge scans font directories **at startup**, so restart it:
+
+```bash
+systemctl --user restart figma-font-bridge
+```
+
+Then check it was found:
+
+```bash
+curl -s http://127.0.0.1:44950/figma/font-files | grep -o "Your Font" | head -1
+```
+
+### Installing a font collection (.zip of many fonts)
+
+```bash
+mkdir -p ~/.local/share/fonts
+unzip font-pack.zip -d ~/.local/share/fonts/
+fc-cache -f
+systemctl --user restart figma-font-bridge
+```
+
+### Removing a font
+
+```bash
+rm ~/.local/share/fonts/YourFont.ttf
+fc-cache -f
+systemctl --user restart figma-font-bridge
+```
+
+> **Tip:** If a font shows in `fc-list` but not in Figma, run
+> `systemctl --user restart figma-font-bridge` — the bridge only re-scans on start.
+
+---
+
 ## Usage
 
 1. Make sure the server is running:
