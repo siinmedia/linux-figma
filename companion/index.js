@@ -4,7 +4,7 @@ const fs = require('fs');
 const path = require('path');
 const fontkit = require('fontkit');
 
-const APP_VERSION = '4.0.0';
+const APP_VERSION = '4.1.0';
 const DEFAULT_HOST = '127.0.0.1';
 const DEFAULT_PORTS = [44950, 44951, 44952, 18412, 44900, 44910];
 
@@ -126,6 +126,55 @@ function buildFontList() {
   return fontFilesJson;
 }
 
+// --- Auto-rescan: watch font dirs (event-based) + periodic fallback ---
+let rescanTimer = null;
+let lastSignature = '';
+
+function fontSignature() {
+  const parts = [];
+  for (const dir of fontDirs) {
+    if (!fs.existsSync(dir)) continue;
+    for (const f of scanFontFiles(dir)) {
+      try {
+        const st = fs.statSync(f);
+        parts.push(`${f}:${st.size}:${st.mtimeMs}`);
+      } catch (e) {}
+    }
+  }
+  return parts.sort().join('|');
+}
+
+function rescan(reason) {
+  const sig = fontSignature();
+  if (sig === lastSignature) return;       // nothing changed
+  lastSignature = sig;
+  buildFontList();
+  console.log(`🔄 Fonts rescaned (${reason}) — ${fontEntries.length} faces now available`);
+}
+
+function scheduleRescan(reason) {
+  clearTimeout(rescanTimer);
+  rescanTimer = setTimeout(() => rescan(reason), 1500); // debounce bursts
+}
+
+function startAutoRescan() {
+  lastSignature = fontSignature();
+  let watchers = 0;
+  for (const dir of fontDirs) {
+    if (!fs.existsSync(dir)) continue;
+    try {
+      fs.watch(dir, { recursive: true }, () => scheduleRescan('change'));
+      watchers++;
+    } catch (e) {
+      // recursive watch unsupported — rely on periodic fallback
+    }
+  }
+  // Safety net: re-check every 60s (cheap: stat-only, no parsing if unchanged)
+  const interval = setInterval(() => rescan('periodic'), 60000);
+  interval.unref();
+  console.log(`👀 Auto-rescan enabled (${watchers} watcher(s) + 60s fallback)`);
+}
+
 function isAllowedFile(filePath) {
   const resolved = path.resolve(filePath);
   return allowedDirs.some(dir => resolved.startsWith(dir));
@@ -195,6 +244,7 @@ buildFontList();
 if (fontEntries.length === 0) {
   console.warn('⚠️  No fonts found. Install fonts to ~/.fonts or ~/.local/share/fonts.');
 }
+startAutoRescan();
 
 // --- Start servers on all ports ---
 const servers = [];

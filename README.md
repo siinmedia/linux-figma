@@ -117,17 +117,18 @@ fc-list | grep -i "Your Font"
 
 ### Make the bridge pick it up
 
-The bridge scans font directories **at startup**, so restart it:
+The bridge **watches your font directories and rescans automatically** — just
+install the font and it appears within a few seconds. No restart needed.
 
-```bash
-systemctl --user restart figma-font-bridge
-```
-
-Then check it was found:
+Check it was found:
 
 ```bash
 curl -s http://127.0.0.1:44950/figma/font-files | grep -o "Your Font" | head -1
 ```
+
+> Auto-rescan watches `~/.fonts`, `~/.local/share/fonts` and `/usr/share/fonts`.
+> It also re-checks every 60s as a fallback. To force a manual restart anyway:
+> `systemctl --user restart figma-font-bridge`
 
 ### Installing a font collection (.zip of many fonts)
 
@@ -135,7 +136,7 @@ curl -s http://127.0.0.1:44950/figma/font-files | grep -o "Your Font" | head -1
 mkdir -p ~/.local/share/fonts
 unzip font-pack.zip -d ~/.local/share/fonts/
 fc-cache -f
-systemctl --user restart figma-font-bridge
+# bridge picks them up automatically (auto-rescan)
 ```
 
 ### Removing a font
@@ -143,11 +144,12 @@ systemctl --user restart figma-font-bridge
 ```bash
 rm ~/.local/share/fonts/YourFont.ttf
 fc-cache -f
-systemctl --user restart figma-font-bridge
+# bridge drops it automatically (auto-rescan)
 ```
 
-> **Tip:** If a font shows in `fc-list` but not in Figma, run
-> `systemctl --user restart figma-font-bridge` — the bridge only re-scans on start.
+> **Note:** Auto-rescan means you normally **never need to restart** the service
+> after adding or removing fonts. If a font still does not appear, check
+> `journalctl --user -u figma-font-bridge | grep rescan`.
 
 ---
 
@@ -162,6 +164,8 @@ systemctl --user restart figma-font-bridge
 3. Select a text layer → open the font dropdown → your local fonts appear.
 
 ### After installing new fonts
+
+**Nothing to do** — the bridge auto-rescans. If you want to force it anyway:
 
 ```bash
 systemctl --user restart figma-font-bridge
