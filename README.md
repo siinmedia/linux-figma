@@ -141,12 +141,13 @@ linux-figma/
 ├── systemd/              # systemd user unit
 │   └── figma-font-bridge.service
 ├── packaging/            # Debian packaging
-│   ├── control
-│   ├── postinst
-│   ├── prerm
-│   └── build-deb.sh
-├── CREDITS.md            # Attribution for reused knowledge/code
+│   ├── control           # Package metadata
+│   ├── postinst          # Install script (enables service, no npm needed)
+│   ├── prerm             # Uninstall script (disables + removes unit)
+│   └── build-deb.sh      # Build reproducible .deb (self-contained)
+├── CREDITS.md            # Attribution for reused protocol knowledge/code
 ├── LICENSE               # MIT
+├── RELEASE.md            # Release notes & upload instructions
 └── README.md
 ```
 
